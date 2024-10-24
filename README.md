@@ -1,11 +1,13 @@
 # Adapting On E2WM: MEW-ML
 Developing frameworks for multi-agent collaborations using MCTS fine-tuned LLM.
-<img src="schematic_mew.png" width = "640" alt="struct" align=center />
+<div align=center>
+<img src="img/schematic_mew.png" width = "640" alt="struct" align=center />
+</div>
 
 # World Model for Language Model
 Official code for [Language Models Meet World Models: Embodied Experiences Enhance Language Models](https://arxiv.org/abs/2305.10626) (<b>NeurIPS 2023</b>). Also check our [twitter](https://twitter.com/szxiangjn/status/1659399771126370304) here.
 <div align=center>
-<img src="world.png" width = "640" alt="struct" align=center />
+<img src="img/world.png" width = "640" alt="struct" align=center />
 </div>
 
 ## Setting Up
@@ -16,7 +18,7 @@ pip install -r requirements.txt
 
 ## E2WM Benchmark
 <div align=center>
-<img src="method.png" width = "640" alt="struct" align=center />
+<img src="img/method.png" width = "640" alt="struct" align=center />
 </div>
 <br />
 
