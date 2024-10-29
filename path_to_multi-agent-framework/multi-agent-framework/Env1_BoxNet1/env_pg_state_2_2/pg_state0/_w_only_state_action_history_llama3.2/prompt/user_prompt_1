@@ -1,0 +1,47 @@
+
+    You're a box-moving agent in a multi-agent system, stationed on a 1x1 square in a grid playground. You can only interact with objects in your square. Squares are denoted by their center coordinates (e.g., square[0.5, 0.5]), and actions involve moving boxes to targets or nearby squares, represented by colors (e.g., move(box_red, target_red)). Each square can contain many targets and boxes.
+    All the agents coordinate with others together to come out a plan and achieve the goal: match each box with its color-coded target.
+    The current state and possible actions of yourself are: {Agent[1.5, 0.5]: in square[1.5, 0.5], can observe ['target_red', 'box_red', 'target_red', 'box_purple', 'box_purple'], can do ['move(box_red, square[0.5, 0.5])', 'move(box_red, square[1.5, 1.5])', 'move(box_red, target_red)', 'move(box_purple, square[0.5, 0.5])', 'move(box_purple, square[1.5, 1.5])', 'move(box_purple, square[0.5, 0.5])', 'move(box_purple, square[1.5, 1.5])']
+}.
+    The current states and possible actions of all other agents are: {Agent[0.5, 0.5]: I am in square[0.5, 0.5], I can observe ['box_red', 'target_red', 'target_green'], I can do ['move(box_red, square[1.5, 0.5])', 'move(box_red, square[0.5, 1.5])', 'move(box_red, target_red)']
+Agent[0.5, 1.5]: I am in square[0.5, 1.5], I can observe ['box_blue', 'box_green', 'box_purple', 'target_purple', 'target_purple', 'box_orange'], I can do ['move(box_blue, square[1.5, 1.5])', 'move(box_blue, square[0.5, 0.5])', 'move(box_green, square[1.5, 1.5])', 'move(box_green, square[0.5, 0.5])', 'move(box_purple, square[1.5, 1.5])', 'move(box_purple, square[0.5, 0.5])', 'move(box_purple, target_purple)', 'move(box_orange, square[1.5, 1.5])', 'move(box_orange, square[0.5, 0.5])']
+Agent[1.5, 1.5]: I am in square[1.5, 1.5], I can observe ['target_blue', 'box_red', 'target_purple', 'box_orange', 'target_orange', 'target_orange', 'box_orange', 'target_orange'], I can do ['move(box_red, square[0.5, 1.5])', 'move(box_red, square[1.5, 0.5])', 'move(box_orange, square[0.5, 1.5])', 'move(box_orange, square[1.5, 0.5])', 'move(box_orange, target_orange)', 'move(box_orange, square[0.5, 1.5])', 'move(box_orange, square[1.5, 0.5])', 'move(box_orange, target_orange)']
+}.
+    The previous state and action pairs at each step are:
+    
+    Please learn from previous steps. Not purely repeat the actions but learn why the state changes or remains in a dead loop. Avoid being stuck in action loops.
+
+    
+    [Action Output Instruction]
+    Must first output 'EXECUTE', then on the new line specify your action plan in this format: {"Agent[0.5, 0.5]":"move(box_blue, square[0.5, 1.5])", "Agent[1.5, 0.5]":"move..."}.
+    Include an agent only if it has a task next.
+    Example#1: 
+    EXECUTE
+    {"Agent[0.5, 0.5]":"move(box_blue, square[0.5, 1.5])", "Agent[1.5, 0.5]":"move(box_green, square[0.5, 0.5])"}
+    
+    Example#2: 
+    EXECUTE
+    {"Agent[0.5, 0.5]":"move(box_blue, target_blue)", "Agent[2.5, 1.5]":"move(box_red, square[1.5, 1.5])"}
+    
+    The previous dialogue history is: {[Agent[0.5, 0.5]: I will analyze the current state and previous dialogue history to determine a suitable action for myself.
+
+From the current state, I can see that there is no clear path for me to move towards my target. Agent[1.5, 0.5] seems to be in a good position to help me by moving box_red to square[0.5, 0.5].
+
+Considering the previous dialogue history, it appears that we have tried various actions without making significant progress. To avoid getting stuck in action loops, I will focus on providing a supportive action that can help other agents make progress.
+
+Therefore, my proposal for this round is:
+
+EXECUTE
+{"Agent[0.5, 1.5]":"move(box_purple, target_purple)"}
+
+This action seems to be beneficial for Agent[1.5, 1.5], and it allows me to observe the outcome without committing to a specific direction.
+
+PROCEED]
+
+}
+    Think step-by-step about the task and the previous dialogue history. Carefully check and correct them if they made a mistake.
+    Respond very concisely but informatively, and do not repeat what others have said. Discuss with others to come up with the best plan.
+    Propose exactly one action for yourself at the **current** round.
+    End your response by either: 1) output PROCEED, if the plans require further discussion; 2) If everyone has made proposals and got approved, output the final plan, must strictly follow [Action Output Instruction]!
+    Your response:
+    

@@ -1,6 +1,12 @@
 import numpy as np
-Code_dir_path = 'path_to_multi-agent-framework/multi-agent-framework/' # Put the current code directory path here
-Saving_path = Code_dir_path + 'Env2_BoxNet2'
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+Code_dir_path = os.path.join(os.getcwd(), 'mit-multiagent', 'results')
+os.makedirs(Code_dir_path, exist_ok=True)
+saving_path = Code_dir_path + 'Env2_BoxNet2'
 
 candidate_list = [('CMAS','_wo_any_dialogue_history'), ('CMAS','_w_only_state_action_history'),
                   ('HMAS-2','_wo_any_dialogue_history'), ('HMAS-2','_w_only_state_action_history'),

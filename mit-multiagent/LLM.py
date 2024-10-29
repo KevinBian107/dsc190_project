@@ -1,57 +1,58 @@
-import openai
+import requests
 import tiktoken
 import time
+
 enc = tiktoken.get_encoding("cl100k_base")
 assert enc.decode(enc.encode("hello world")) == "hello world"
-enc = tiktoken.encoding_for_model("gpt-4")
 
-openai_api_key_name = 'sk-...'
 
-def GPT_response(messages, model_name):
-  token_num_count = 0
-  for item in messages:
-    token_num_count += len(enc.encode(item["content"]))
-
-  if model_name in ['gpt-4', 'gpt-4-32k', 'gpt-3.5-turbo-0301', 'gpt-4-0613', 'gpt-4-32k-0613', 'gpt-3.5-turbo-16k-0613']:
-    #print(f'-------------------Model name: {model_name}-------------------')
-    openai.api_key = openai_api_key_name
+def LLaMA_response(messages, model_name, url="http://localhost:11434/api/generate"):
+    """
+    messages: list of message dictionaries following ChatCompletion format
+    model_name: name of the LLaMA model (e.g., 'llama3.2')
+    url: endpoint where LLaMA is hosted (e.g., "http://localhost:11434/api/generate")
+    """
+    prompt = "\n".join(
+        [f"{msg['role'].capitalize()}: {msg['content']}" for msg in messages]
+    )
+    data = {
+        "model": model_name,
+        "prompt": prompt,
+        # "max_tokens": 2000,
+        "temperature": 0.0,
+        "top_p": 1,
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+        "stream": False,
+    }
 
     try:
-      result = openai.ChatCompletion.create(
-        model=model_name,
-        messages=messages,
-        temperature = 0.0,
-        top_p=1,
-        frequency_penalty=0,
-        presence_penalty=0
-      )
-    except:
-      try:
-        result = openai.ChatCompletion.create(
-          model=model_name,
-          messages=messages,
-          temperature=0.0,
-          top_p=1,
-          frequency_penalty=0,
-          presence_penalty=0
-        )
-      except:
-        try:
-          print(f'{model_name} Waiting 60 seconds for API query')
-          time.sleep(60)
-          result = openai.ChatCompletion.create(
-            model=model_name,
-            messages=messages,
-            temperature = 0.0,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0
-          )
-        except:
-          return 'Out of tokens', token_num_count
-    token_num_count += len(enc.encode(result.choices[0]['message']['content']))
-    print(f'Token_num_count: {token_num_count}')
-    return result.choices[0]['message']['content'], token_num_count
+        response = requests.post(url=url, json=data)
 
-  else:
-    raise ValueError(f'Invalid model name: {model_name}')
+        if response.status_code == 200:
+            response_text = response.json().get("response", "")
+            token_num_count = sum(
+                len(enc.encode(msg["content"])) for msg in messages
+            ) + len(enc.encode(response_text))
+            print(f"Token_num_count: {token_num_count}")
+            return response_text, token_num_count
+        else:
+            print("Error:", response.status_code, response.json())
+            return None, 0
+    except Exception as e:
+        print(f"API call failed: {e}")
+        return None, 0
+
+
+# Example usage
+# messages = [
+#     {"role": "system", "content": "You are a helpful assistant."},
+#     {"role": "user", "content": "Hello, how are you? What is your parameter size"}
+# ]
+
+# url = "http://localhost:11434/api/generate"
+# model_name = "llama3.2"
+
+# response, token_count = LLaMA_response(messages, model_name, url)
+# print("Response:", response)
+# print("Token count:", token_count)
