@@ -682,7 +682,7 @@ def input_prompt_local_agent_HMAS2_dialogue_func(
     You\'re a box-moving agent in a multi-agent system, stationed on a 1x1 square in a grid playground. You can only interact with objects in your square. Squares are denoted by their center coordinates (e.g., square[0.5, 0.5]), and actions involve moving boxes to targets or nearby squares, represented by colors (e.g., move(box_red, target_red)). Each square can contain many targets and boxes.
   
     A central planner coordinates all agents to achieve the goal: match each box with its color-coded target.
-  
+
     The current state and possible actions of yourself are: {{{state_update_prompt_local_agent}}}.
     The current states and possible actions of all other agents are: {{{state_update_prompt_other_agent}}}.
     The previous state and action pairs at each step are:
@@ -712,8 +712,18 @@ def input_reprompt_func(state_update_prompt):
 def message_construct_func(
     user_prompt_list, response_total_list, dialogue_history_method
 ):
+    messages = [{"role": "system", 
+                 "content": f'''You are a helpful assistant. 
+                 
+                 When asked to specifiy your action plan, specificy it strictly in JSON format: {{"Agent[0.5, 0.5]":"move(box_blue, square[0.5, 1.5])", "Agent[1.5, 0.5]":"move(box_blue, target_blue])"}}. 
+                 
+                 Make sure that:
+                 - If no action for an agent in the next step, do not include it in JSON output. 
+                 - At most one action for each agent in each step.
+                 '''
+                 }]
+
     if f"{dialogue_history_method}" == "_w_all_dialogue_history":
-        messages = [{"role": "system", "content": "You are a helpful assistant."}]
         # print('length of user_prompt_list', len(user_prompt_list))
         for i in range(len(user_prompt_list)):
             messages.append({"role": "user", "content": user_prompt_list[i]})
@@ -726,7 +736,6 @@ def message_construct_func(
         "_wo_any_dialogue_history",
         "_w_only_state_action_history",
     ):
-        messages = [{"role": "system", "content": "You are a helpful assistant."}]
         messages.append({"role": "user", "content": user_prompt_list[-1]})
         # print('Length of messages', len(messages))
     return messages

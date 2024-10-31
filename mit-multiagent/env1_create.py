@@ -118,22 +118,21 @@ def with_action_syntactic_check_func(
     iteration_num = 0
     token_num_count_list_add = []
     while iteration_num < 6:
-        # response = response.replace("'", '"')
 
-        valid = is_valid_json(response)
+        # valid = is_valid_json(response)
         print("RESPONSE", response)
       
-        while not valid:
-            messages = [
-                        {"role": "system", "content": "You are a helpful assistant specialized for fixing Json format."},
-                        {"role": "user", "content": f"Please fix the Json message in here {response} and give only this JSON as output"},
-                        ]
-            response, token_num_count = LLaMA_response(messages, model_name)
-            token_num_count_list_add.append(token_num_count)
+        # while not valid:
+        #     messages = [
+        #                 {"role": "system", "content": "You are a helpful assistant specialized for fixing Json format."},
+        #                 {"role": "user", "content": f"Please fix the Json message in here {response} and give only this JSON as output"},
+        #                 ]
+        #     response, token_num_count = LLaMA_response(messages, model_name)
+        #     token_num_count_list_add.append(token_num_count)
 
-            valid = is_valid_json(response)
+        #     valid = is_valid_json(response)
 
-            print(response)
+        #     print(response)
 
 
         response_total_list.append(response)
@@ -197,7 +196,7 @@ def with_action_syntactic_check_func(
 
         if feedback != "":
             feedback += (
-                "Please replan for all the agents again with the same ouput format:"
+                "Please replan for all the agents again with the same ouput format. The output should have the same json format {Agent[0.5, 0.5]:move(box_blue, square[0.5, 1.5]), Agent[1.5, 0.5]:move...}. Do not explain, just directly output json directory. Your response:"
             )
             print("----------Syntactic Check----------")
             print(f"Response original: {response}")

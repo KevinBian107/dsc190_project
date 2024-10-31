@@ -34,7 +34,7 @@ def LLaMA_response(messages, model_name, url="http://localhost:11434/api/generat
             token_num_count = sum(
                 len(enc.encode(msg["content"])) for msg in messages
             ) + len(enc.encode(response_text))
-            print(f"Token_num_count: {token_num_count}")
+            #print(f"Token_num_count: {token_num_count}")
             return response_text, token_num_count
         else:
             print("Error:", response.status_code, response.json())
