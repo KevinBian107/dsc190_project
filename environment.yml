@@ -1,4 +1,4 @@
-name: wicc
+name: rplh
 channels:
   - defaults
   - conda-forge
