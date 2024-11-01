@@ -4,106 +4,44 @@ Developing frameworks for multi-agent collaborations using MCTS fine-tuned LLM.
 <img src="img/schematic_mew.png" width = "640" alt="struct" align=center />
 </div>
 
-# World Model for Language Model
-Official code for [Language Models Meet World Models: Embodied Experiences Enhance Language Models](https://arxiv.org/abs/2305.10626) (<b>NeurIPS 2023</b>). Also check our [twitter](https://twitter.com/szxiangjn/status/1659399771126370304) here.
-<div align=center>
-<img src="img/world.png" width = "640" alt="struct" align=center />
+# Multi-Agent-Framework ([Website](https://yongchao98.github.io/MIT-REALM-Multi-Robot/), ICRA 2024)
+Here we show the related code for the Multi-Agent Framework paper. The code will be updated dynamically in the future. There are in total four environments, corresponding to BoxNet1, BoxNet2, BoxLift, and Warehouse, respectively.
+
+<div align="center">
+    <img src="Github-figures/main_figure.png" alt="Main image" width="75%"/>
 </div>
 
-## Setting Up
-Install the dependencies by
+## Requirements
+Please install the following Python packages.
 ```
-pip install -r requirements.txt
+pip install numpy openai re random time copy tiktoken
 ```
 
-## E2WM Benchmark
-<div align=center>
-<img src="img/method.png" width = "640" alt="struct" align=center />
-</div>
-<br />
+Then you need to get your OpenAI key from https://beta.openai.com/
+Put that OpenAI key starting 'sk-' into the LLM.py, line8
 
-All constructed training data from embodied experiences and evaluation data are released in `/data/train` and `/data/eval`, respectively.
+## Create testing trial environments
+Run the env1_create.py/env2_create.py/env3_create.py/env4_create.py to create the environments, remember change the Code_dir_path in the last lines.
 
-<details>
-<summary> <strong> Data Statistics </strong> </summary>
-  
-- Training
+```
+python env1_create.py
+```
 
-| Task                 | Size |
-|----------------------|------|
-| Plan Generation      | 1659 |
-| Activity Recognition | 1659 |
-| Counting             | 1000 |
-| Object Path Tracking | 1000 |
-  
- - Evaluation
-  
-| Task                               | Size |
-|------------------------------------|------|
-| Plan Generation                    |      |
-| &nbsp; - <em>Vanilla Seen</em>     | 175  |
-| &nbsp; - <em>Vanilla Unseen</em>   | 54   |
-| &nbsp; - <em>Confusing Seen</em>   | 135  |
-| &nbsp; - <em>Confusing UnSeen</em> | 43   | 
-| Houwork QA                         | 261  |
-| Negation Housework QA              | 162  |
-| Activity Recognition QA            | 549  |
-| Activity Inference QA              | 262  |
-| Counting QA                        | 194  |
-| Object Path Tracking               | 200  |
-| Object Location QA                 | 200  |
-  
-</details>
+## Usage
+Run the env1-box-arrange.py/env2-box-arrange.py/env3-box-arrange.py/env4-box-arrange.py to test our approaches in different frameworks and dialogue history methods. In around Line270, set up the models(GPT-3/4), frameworks (HMAS-2,HMSA-1, DMAS,CMAS), dialogue history method, and your working path dir. Then run the script:
 
-## Train & Eval
-We compute the fiser matrixs on the sampled 20000 examples from [Pile](https://pile.eleuther.ai/) validation set. You can download [fisher-matrix-1.3B](https://huggingface.co/jiannanx/fisher-matrix-1.3B) and [fisher-matrix-6B](https://huggingface.co/jiannanx/fisher-matrix-6B) from huggingface model hub, and put them under `fisher-matrix` directory.
+```
+python env1-box-arrange.py
+```
 
-Then go to the `scripts` directory where you can find all the training and evaluation scripts:
-```
-cd scripts
-```
-We provide usage examples of GPT-J-6B below. If you want to use GPJ-Neo-1.3B, just replace `6B` in the script name with `1.3B`.
+The experimental results will appear in the generated dir Env1_BoxNet1. For visualizing the testing results, set up the Code_dir_path in line2, then run the script:
 
-### Train
-If you want to train GPT-J-6B, use:
 ```
-sh run_6B.sh
+python data_visua.py
 ```
-This script trains GPT-J-6B on a single GPU. 
 
-If you want to do distributed training, first run this:
-```
-accelerate config --config_file accelerate_config.json
-```
-and follow the instructions to set up the config file. (We also provide a sample config file in `scripts`)
+## Recommended Work
 
-Then, you can simply run:
-```
-sh run_6B_multi_gpu.sh
-```
-### Eval
-To do evaluation on QA tasks and generation tasks, run 
-```
-sh eval_qa_6B.sh
-``` 
-and 
-```
-sh eval_gen_6B.sh
-``` 
-The results will be stored in `output/ewc-lora-6B/qa-metric.txt` and `output/ewc-lora-6B/gen-metric.txt`, respectively.
+[AutoTAMP: Autoregressive Task and Motion Planning with LLMs as Translators and Checkers](https://arxiv.org/pdf/2306.06531.pdf)
 
-If you want to do distributed evaluation for generation tasks, please modify `eval_gen_6B.sh` as:
-1. Replace `python eval_gen.py` with `accelerate launch --config_file accelerate_config.json eval_gen.py`
-2. Remove `export CUDA_VISIBLE_DEVICES=0` 
-
-This is same as the change from `run_6B.sh` to `run_6B_multi_gpu.sh`.
-
-## Citation
-```
-@article{xiang2023language,
-  title={Language Models Meet World Models: Embodied Experiences Enhance Language Models},
-  author={Xiang, Jiannan and Tao, Tianhua and Gu, Yi and Shu, Tianmin and Wang, Zirui and Yang, Zichao and Hu, Zhiting},
-  journal={arXiv preprint arXiv:2305.10626},
-  year={2023}
-}
-```
+[NL2TL: Transforming Natural Languages to Temporal Logics using Large Language Models](https://arxiv.org/pdf/2305.07766.pdf)

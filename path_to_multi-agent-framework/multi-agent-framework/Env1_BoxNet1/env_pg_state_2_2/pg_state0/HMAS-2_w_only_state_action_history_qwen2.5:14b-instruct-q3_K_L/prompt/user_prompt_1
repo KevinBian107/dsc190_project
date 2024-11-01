@@ -1,0 +1,20 @@
+
+    You are a central planner directing agents in a grid-like field to move colored boxes. Each agent is assigned to a 1x1 square and can only interact with objects in its area. Agents can move a box to a neighboring square or a same-color target. Each square can contain many targets and boxes.
+
+    The squares are identified by their center coordinates, e.g., square[0.5, 0.5]. Actions are like: move(box_red, target_red) or move(box_red, square[0.5, 0.5]).
+
+    Your task is to instruct each agent to match all boxes to their color-coded targets. After each move, agents provide updates for the next sequence of actions. Your job is to coordinate the agents optimally.
+
+    The previous state and action pairs at each step are:
+    
+    Please learn from previous steps. Not purely repeat the actions but learn why the state changes or remains in a dead loop. Avoid being stuck in action loops.
+
+    Hence, the current state is {'0.5_0.5': ['box_blue', 'target_blue', 'target_red', 'box_purple', 'target_purple'], '0.5_1.5': ['target_red', 'box_red', 'target_red', 'box_green', 'target_green', 'box_green', 'box_purple', 'box_orange'], '1.5_0.5': ['box_purple', 'target_purple', 'target_purple', 'box_orange', 'target_orange'], '1.5_1.5': ['box_red', 'box_red', 'target_green', 'target_orange']}, with the possible actions:
+    Agent[0.5, 0.5]: I am in square[0.5, 0.5], I can observe ['box_blue', 'target_blue', 'target_red', 'box_purple', 'target_purple'], I can do ['move(box_blue, square[1.5, 0.5])', 'move(box_blue, square[0.5, 1.5])', 'move(box_blue, target_blue)', 'move(box_purple, square[1.5, 0.5])', 'move(box_purple, square[0.5, 1.5])', 'move(box_purple, target_purple)']
+Agent[0.5, 1.5]: I am in square[0.5, 1.5], I can observe ['target_red', 'box_red', 'target_red', 'box_green', 'target_green', 'box_green', 'box_purple', 'box_orange'], I can do ['move(box_red, square[1.5, 1.5])', 'move(box_red, square[0.5, 0.5])', 'move(box_red, target_red)', 'move(box_green, square[1.5, 1.5])', 'move(box_green, square[0.5, 0.5])', 'move(box_green, target_green)', 'move(box_green, square[1.5, 1.5])', 'move(box_green, square[0.5, 0.5])', 'move(box_green, target_green)', 'move(box_purple, square[1.5, 1.5])', 'move(box_purple, square[0.5, 0.5])', 'move(box_orange, square[1.5, 1.5])', 'move(box_orange, square[0.5, 0.5])']
+Agent[1.5, 0.5]: I am in square[1.5, 0.5], I can observe ['box_purple', 'target_purple', 'target_purple', 'box_orange', 'target_orange'], I can do ['move(box_purple, square[0.5, 0.5])', 'move(box_purple, square[1.5, 1.5])', 'move(box_purple, target_purple)', 'move(box_orange, square[0.5, 0.5])', 'move(box_orange, square[1.5, 1.5])', 'move(box_orange, target_orange)']
+Agent[1.5, 1.5]: I am in square[1.5, 1.5], I can observe ['box_red', 'box_red', 'target_green', 'target_orange'], I can do ['move(box_red, square[0.5, 1.5])', 'move(box_red, square[1.5, 0.5])', 'move(box_red, square[0.5, 1.5])', 'move(box_red, square[1.5, 0.5])']
+
+
+    Specify your action plan in this format: {"Agent[0.5, 0.5]":"move(box_blue, square[0.5, 1.5])", "Agent[1.5, 0.5]":"move...}. Include an agent only if it has a task next. Now, plan the next step:
+      

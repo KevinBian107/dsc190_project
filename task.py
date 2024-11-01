@@ -1,6 +1,6 @@
 from LLM import *
-from prompt_env1 import *
-from env1_create import *
+from prompt import *
+from env_create import *
 from sre_constants import error
 import random
 import os
@@ -13,9 +13,10 @@ import time
 import sys
 import os
 
-# cen_decen_framework = 'DMAS', 'HMAS-1', 'CMAS', 'HMAS-2'
 # dialogue_history_method = '_w_all_dialogue_history', '_wo_any_dialogue_history', '_w_only_state_action_history'
 def run_exp(Saving_path, pg_row_num, pg_column_num, iteration_num, query_time_limit, dialogue_history_method = '_w_only_state_action_history', cen_decen_framework = 'HMAS-2', model_name = 'gpt-4'):
+
+#-----------------------------------------DEFINING-----------------------------------------#
 
   Saving_path_result = Saving_path+f'/env_pg_state_{pg_row_num}_{pg_column_num}/pg_state{iteration_num}/{cen_decen_framework}{dialogue_history_method}_{model_name}'
 
@@ -45,78 +46,32 @@ def run_exp(Saving_path, pg_row_num, pg_column_num, iteration_num, query_time_li
     print(pg_dict)
     state_update_prompt = state_update_func(pg_row_num, pg_column_num, pg_dict)
     
+    #-----------------------------------------ONE AGENT-----------------------------------------#
     if cen_decen_framework in ('DMAS'):
-      ...
-    #   print('--------DMAS method starts--------')
-    #   match = None
-    #   count_round = 0
-    #   dialogue_history = ''
-    #   response = '{}'
-    #   while not match and count_round <= 3:
-    #     count_round += 1
-    #     for local_agent_row_i in range(pg_row_num):
-    #       for local_agent_column_j in range(pg_column_num):
-    #         #if f'Agent[{local_agent_row_i + 0.5}, {local_agent_column_j + 0.5}]' in pg_dict:
-    #           state_update_prompt_local_agent, state_update_prompt_other_agent = state_update_func_local_agent(pg_row_num,
-    #                                                                                                            pg_column_num,
-    #                                                                                                            local_agent_row_i,
-    #                                                                                                            local_agent_column_j,
-    #                                                                                                            pg_dict)
-    #           user_prompt_1 = input_prompt_local_agent_DMAS_dialogue_func(state_update_prompt_local_agent,
-    #                                                                        state_update_prompt_other_agent,
-    #                                                                        dialogue_history, response_total_list,
-    #                                                                        pg_state_list, dialogue_history_list,
-    #                                                                        dialogue_history_method)
-    #           user_prompt_list.append(user_prompt_1)
-    #           print(f'User prompt: {user_prompt_1}\n\n')
-    #           with open(Saving_path_result + '/prompt' + '/user_prompt_' + str(index_query_times + 1), 'w') as f:
-    #             f.write(user_prompt_list[-1])
-    #           messages = message_construct_func([user_prompt_1], [], '_w_all_dialogue_history')
-    #           initial_response, token_num_count = LLaMA_response(messages, model_name)  # 'gpt-4' or 'gpt-3.5-turbo-0301' or 'gpt-4-32k' or 'gpt-3' or 'gpt-4-0613'
-    #           token_num_count_list.append(token_num_count)
-
-    #           print('CHECK', initial_response)
-
-    #           dialogue_history += f'[Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]: {initial_response}]\n\n'
-    #           #print(dialogue_history)
-    #           if re.search(r'EXECUTE', initial_response):
-    #             # Search for the pattern that starts with { and ends with }
-    #             print('EXECUTE!')
-    #             match = re.search(r'{.*}', initial_response, re.DOTALL)
-    #             if match:
-    #               response = match.group()
-    #               response, token_num_count_list_add = with_action_syntactic_check_func(pg_dict, response,
-    #                                                                                     [user_prompt_list[-1]],
-    #                                                                                     [],
-    #                                                                                     model_name,
-    #                                                                                     '_w_all_dialogue_history',
-    #                                                                                     cen_decen_framework)
-    #               token_num_count_list = token_num_count_list + token_num_count_list_add
-    #               print(f'response: {response}')
-    #               #print(f'User prompt: {user_prompt_1}\n\n')
-    #             break
-    #   dialogue_history_list.append(dialogue_history)
-    
+      pass 
     else:
       if cen_decen_framework in ('CMAS', 'HMAS-1', 'HMAS-1-fast', 'HMAS-2'):
+        #-----------------------------------------PROMPT-----------------------------------------#
         user_prompt_1 = input_prompt_1_func_total(state_update_prompt, response_total_list,
                                   pg_state_list, dialogue_history_list,
                                   dialogue_history_method, cen_decen_framework)
         user_prompt_list.append(user_prompt_1)
-
-        messages = message_construct_func([user_prompt_1], [], '_w_all_dialogue_history') # message construction
-
+        # message construction
+        messages = message_construct_func([user_prompt_1], [], '_w_all_dialogue_history')
       print('MESSAGE:', messages)
 
       with open(Saving_path_result+'/prompt' + '/user_prompt_'+str(index_query_times+1), 'w') as f:
         f.write(user_prompt_list[-1])
-      initial_response, token_num_count = LLaMA_response(messages, model_name) # 'gpt-4' or 'gpt-3.5-turbo-0301' or 'gpt-4-32k' or 'gpt-3' or 'gpt-4-0613'
       
+      #-----------------------------------------RESPONSE-----------------------------------------#
+      initial_response, token_num_count = LLaMA_response(messages, model_name) # 'gpt-4' or 'gpt-3.5-turbo-0301' or 'gpt-4-32k' or 'gpt-3' or 'gpt-4-0613'
       print('Initial response: ', initial_response)
+      
 
+
+      #-----------------------------------------SYNTACTIC CHECK-----------------------------------------#
       token_num_count_list.append(token_num_count)
       match = re.search(r'{.*}', initial_response, re.DOTALL)
-
       if match:
         response = match.group()
         if response[0] == '{' and response[-1] == '}':
@@ -125,7 +80,6 @@ def run_exp(Saving_path, pg_row_num, pg_column_num, iteration_num, query_time_li
           print(f'AGENT ACTION RESPONSE: {response}')
         else:
           raise ValueError(f'Response format error: {response}')
-
       if response == 'Out of tokens':
         success_failure = 'failure over token length limit'
         return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
@@ -133,14 +87,21 @@ def run_exp(Saving_path, pg_row_num, pg_column_num, iteration_num, query_time_li
         success_failure = 'Syntactic Error'
         return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
 
-      # Local agent response for checking the feasibility of actions
+      #-----------------------------------------TWO AGENT-----------------------------------------#
       if cen_decen_framework == 'HMAS-2':
         print('--------HMAS-2 method starts--------')
+
+        #-----------------------------------------CENTER AGENT-----------------------------------------#
+        # history of first agent
         dialogue_history = f'Central Planner: {response}\n'
         #print(f'Original plan response: {response}')
-        prompt_list_dir = {}; response_list_dir = {}; local_agent_response_list_dir = {}
+        prompt_list_dir = {}
+        response_list_dir = {}
+        local_agent_response_list_dir = {}
         local_agent_response_list_dir['feedback1'] = ''
         agent_dict = json.loads(response)
+
+        #-----------------------------------------Local AGENT-----------------------------------------#
         for local_agent_row_i in range(pg_row_num):
           for local_agent_column_j in range(pg_column_num):
             if f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]' in agent_dict:
@@ -157,13 +118,15 @@ def run_exp(Saving_path, pg_row_num, pg_column_num, iteration_num, query_time_li
               if response_local_agent != 'I Agree':
                 local_agent_response_list_dir['feedback1'] += f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]: {response_local_agent}\n' # collect the response from all the local agents
                 dialogue_history += f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]: {response_local_agent}\n'
-
+        
+        
+        #-----------------------------------------RECONSTRUCT MESSAGES-----------------------------------------#
         if local_agent_response_list_dir['feedback1'] != '':
           local_agent_response_list_dir['feedback1'] += '\nThis is the feedback from local agents. If you find some errors in your previous plan, try to modify it. Otherwise, output the same plan as before. The output should have the same json format {Agent[0.5, 0.5]:move(box_blue, square[0.5, 1.5]), Agent[1.5, 0.5]:move...}, as above. Do not explain, just directly output json directory. Your response:'
           messages = message_construct_func([user_prompt_list[-1], local_agent_response_list_dir['feedback1']], [response], '_w_all_dialogue_history') # message construction
-          
           response_central_again, token_num_count = LLaMA_response(messages, model_name)
           
+          #-----------------------------------------SYNTACTIC CHECK AGAIN-----------------------------------------#
           token_num_count_list.append(token_num_count)
           match = re.search(r'{.*}', response_central_again, re.DOTALL)
           if match:
@@ -184,62 +147,8 @@ def run_exp(Saving_path, pg_row_num, pg_column_num, iteration_num, query_time_li
           pass
 
         dialogue_history_list.append(dialogue_history)
-
-      # elif cen_decen_framework == 'HMAS-1' or cen_decen_framework == 'HMAS-1-fast':
-      #   print('--------HMAS-1 method starts--------')
-      #   count_round = 0
-      #   dialogue_history = f'Central Planner: {response}\n'
-      #   match = None
-      #   agent_dict = json.loads(response)
-      #   while not match and count_round <= 3:
-      #     count_round += 1
-      #     for local_agent_row_i in range(pg_row_num):
-      #       for local_agent_column_j in range(pg_column_num):
-      #         if f'Agent[{local_agent_row_i + 0.5}, {local_agent_column_j + 0.5}]' in agent_dict:
-      #           state_update_prompt_local_agent, state_update_prompt_other_agent = state_update_func_local_agent(
-      #             pg_row_num,
-      #             pg_column_num,
-      #             local_agent_row_i,
-      #             local_agent_column_j,
-      #             pg_dict)
-      #           if count_round >= 2 and cen_decen_framework == 'HMAS-1-fast':
-      #             user_prompt_1 = input_prompt_local_agent_HMAS1_dialogue_fast_plan_func(state_update_prompt_local_agent,
-      #                                                                          state_update_prompt_other_agent,
-      #                                                                          dialogue_history, response_total_list, pg_state_list,
-      #                                                                          dialogue_history_list, dialogue_history_method,
-      #                                                                          initial_plan=response)
-      #           else:
-      #             user_prompt_1 = input_prompt_local_agent_HMAS1_dialogue_func(state_update_prompt_local_agent,
-      #                                                          state_update_prompt_other_agent, dialogue_history,
-      #                                                          response_total_list, pg_state_list,
-      #                                                          dialogue_history_list, dialogue_history_method,
-      #                                                          initial_plan='')
-
-      #           user_prompt_list.append(user_prompt_1)
-      #           with open(Saving_path_result + '/prompt' + '/user_prompt_' + str(index_query_times + 1), 'w') as f:
-      #             f.write(user_prompt_list[-1])
-      #           messages = message_construct_func([user_prompt_1], [], '_w_all_dialogue_history')
-      #           initial_response, token_num_count = LLaMA_response(messages,model_name)  # 'gpt-4' or 'gpt-3.5-turbo-0301' or 'gpt-4-32k' or 'gpt-3' or 'gpt-4-0613'
-      #           token_num_count_list.append(token_num_count)
-
-      #           #print('-----------prompt------------\n' + initial_response)
-      #           dialogue_history += f'Agent[{local_agent_row_i + 0.5}, {local_agent_column_j + 0.5}]: {initial_response}\n'
-      #           #print(dialogue_history)
-      #           match = re.search(r'{.*}', initial_response, re.DOTALL)
-      #           if match and re.search(r'EXECUTE', initial_response):
-      #             response = match.group()
-      #             response, token_num_count_list_add = with_action_syntactic_check_func(pg_dict, response,
-      #                                                                                   [user_prompt_list[-1]],
-      #                                                                                   [],
-      #                                                                                   model_name,
-      #                                                                                   '_w_all_dialogue_history',
-      #                                                                                   cen_decen_framework)
-      #             token_num_count_list = token_num_count_list + token_num_count_list_add
-      #             print(f'response: {response}')
-      #             break
-      #             break
-      #   dialogue_history_list.append(dialogue_history)
-
+    
+    #-----------------------------------------FINAL RESPONSE SYNTACTIC CHECK AGAIN-----------------------------------------#
     response_total_list.append(response)
     if response == 'Out of tokens':
       success_failure = 'failure over token length limit'
@@ -270,7 +179,7 @@ def run_exp(Saving_path, pg_row_num, pg_column_num, iteration_num, query_time_li
     with open(Saving_path_result+'/pg_state' + '/pg_state'+str(index_query_times+2)+'.json', 'w') as f:
         json.dump(pg_dict, f)
 
-    # Check whether the task has been completed
+    #-----------------------------------------TASK SUCCESS CHECK-----------------------------------------#
     count = 0
     for key, value in pg_dict.items():
       count += len(value)
@@ -284,14 +193,14 @@ def run_exp(Saving_path, pg_row_num, pg_column_num, iteration_num, query_time_li
   return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
 
 
+#-----------------------------------------RUNNING EXPERIMENT-----------------------------------------#
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-Code_dir_path = os.path.join(os.getcwd(), 'mit-multiagent', 'runs')
+Code_dir_path = os.path.join(os.getcwd(), 'runs')
 os.makedirs(Code_dir_path, exist_ok=True)
 saving_path = Code_dir_path + 'Envq_BoxNet1'
 
-# Code_dir_path = 'path_to_multi-agent-framework/multi-agent-framework/' # Put the current code directory path here
-# Saving_path = Code_dir_path + 'Env1_BoxNet1'
-model_name = "qwen2.5:7b-instruct-q5_K_M" 
+model_name = "qwen2.5:14b-instruct-q3_K_L" 
+
 print(f'-------------------Model name: {model_name}-------------------')
 for pg_row_num, pg_column_num in [(2,2), (2,4), (4,4), (4,8)]:
   if pg_row_num == 4 and pg_column_num == 8:

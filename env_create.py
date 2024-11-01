@@ -1,6 +1,6 @@
 # Box moving to target without collision
 
-from prompt_env1 import *
+from prompt import *
 from LLM import *
 from sre_constants import error
 import random
