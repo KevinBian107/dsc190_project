@@ -1,7 +1,7 @@
-# Adapting On E2WM: MEW-ML
+# Adapting On E2WM: Role-playing Leader-hellucination Agent
 Developing frameworks for multi-agent collaborations using MCTS fine-tuned LLM.
 <div align=center>
-<img src="img/schematic_mew.png" width = "640" alt="struct" align=center />
+<img src="rplh.png" width = "640" alt="struct" align=center />
 </div>
 
 # Multi-Agent-Framework ([Website](https://yongchao98.github.io/MIT-REALM-Multi-Robot/), ICRA 2024)
