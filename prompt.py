@@ -9,6 +9,8 @@ input_prompt_token_limit = 3000
 #TODO: Added Common Sense + Sensory Information
 
 def LLM_summarize_func(state_action_prompt_next_initial, model_name):
+    '''Shorten the prompt given'''
+
     prompt1 = f"Please summarize the following content as concise as possible: \n{state_action_prompt_next_initial}"
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
@@ -55,36 +57,32 @@ def rplh_prompt_func(state_update_prompt,
     
     if len(pg_state_list) - len(response_total_list) != 1:
         raise ValueError("state and response list do not match")
-    if (
-        len(pg_state_list) - len(dialogue_history_list) != 1
-        and cen_decen_framework != "CMAS"
-    ):
+    if len(pg_state_list) - len(dialogue_history_list) != 1:
         raise ValueError("state and dialogue history list do not match")
 
-    user_prompt_1 = f"""
-    You are a central planner directing agents in a grid-like field to move colored boxes. Each agent is assigned to a 1x1 square and can only interact with objects in its area.
-    Agents can move a box to a neighboring square or a same-color target.
-    Each square can contain many targets and boxes.
-    The squares are identified by their center coordinates, e.g., square[0.5, 0.5].
-    Actions are like: move(box_red, target_red) or move(box_red, square[0.5, 0.5]).
-    Your task is to instruct each agent to match all boxes to their color-coded targets.
-    After each move, agents provide updates for the next sequence of actions.
-    Your job is to coordinate the agents optimally.
-    The previous state and action pairs at each step are:
-    Please learn from previous steps.
-    Not purely repeat the actions but learn why the state changes or remains in a dead loop.
-    Avoid being stuck in action loops.
-    Hence, the current state is {pg_state_list[-1]}, with the possible actions:{state_update_prompt}
-    Specify your action plan in this format: {{"Agent[0.5, 0.5]":"move(box_blue, square[0.5, 1.5])", "Agent[1.5, 0.5]":"move...}}.
-    Include an agent only if it has a task next. Now, plan the next step:
-    """
+    # user_prompt_1 = f"""
+    # You are a central planner directing agents in a grid-like field to move colored boxes. Each agent is assigned to a 1x1 square and can only interact with objects in its area.
+    # Agents can move a box to a neighboring square or a same-color target.
+    # Each square can contain many targets and boxes.
+    # The squares are identified by their center coordinates, e.g., square[0.5, 0.5].
+    # Actions are like: move(box_red, target_red) or move(box_red, square[0.5, 0.5]).
+    # Your task is to instruct each agent to match all boxes to their color-coded targets.
+    # After each move, agents provide updates for the next sequence of actions.
+    # Your job is to coordinate the agents optimally.
+    # The previous state and action pairs at each step are:
+    # Please learn from previous steps.
+    # Not purely repeat the actions but learn why the state changes or remains in a dead loop.
+    # Avoid being stuck in action loops.
+    # Hence, the current state is {pg_state_list[-1]}, with the possible actions:{state_update_prompt}
+    # Specify your action plan in this format: {{"Agent[0.5, 0.5]":"move(box_blue, square[0.5, 1.5])", "Agent[1.5, 0.5]":"move...}}.
+    # Include an agent only if it has a task next. Now, plan the next step:
+    # """
     token_num_count = len(enc.encode(user_prompt_1))
 
-    if dialogue_history_method in (
-        "_w_only_state_action_history",
-        "_w_compressed_dialogue_history",
-        "_w_all_dialogue_history",
-    ):
+    if dialogue_history_method in ("_w_only_state_action_history",
+                                   "_w_compressed_dialogue_history",
+                                   "_w_all_dialogue_history"):
+
         if dialogue_history_method == "_w_only_state_action_history":
             state_action_prompt = ""
             for i in range(len(response_total_list) - 1, -1, -1):
@@ -131,6 +129,7 @@ def rplh_prompt_func(state_update_prompt,
 
         user_prompt_1 = f"""
         You are a central planner directing agents in a grid-like field to move colored boxes.
+        You need to make moves and other agents need to make moves.
         Each agent is assigned to a 1x1 square and can only interact with objects in its area.
         Agents can move a box to a neighboring square or a same-color target.
         Each square can contain many targets and boxes.
