@@ -60,6 +60,26 @@ def rplh_prompt_func(state_update_prompt,
     if len(pg_state_list) - len(dialogue_history_list) != 1:
         raise ValueError("state and dialogue history list do not match")
     
+    user_prompt_1 = f'''
+    You are a central planner directing agents in a grid-like field to move colored boxes.
+    Each agent is assigned to a 1x1 square and can only interact with objects in its area.
+    Agents can move a box to a neighboring square or a same-color target.
+    Each square can contain many targets and boxes.
+    The squares are identified by their center coordinates, e.g., square[0.5, 0.5].
+    Actions are like: move(box_red, target_red) or move(box_red, square[0.5, 0.5]).
+    Your task is to instruct each agent to match all boxes to their color-coded targets.
+    After each move, agents provide updates for the next sequence of actions.
+    Your job is to coordinate the agents optimally.
+    The previous state and action pairs at each step are:
+    Please learn from previous steps.
+    Not purely repeat the actions but learn why the state changes or remains in a dead loop.
+    Avoid being stuck in action loops.
+    Hence, the current state is {pg_state_list[-1]}, with the possible actions: {state_update_prompt}
+    Specify your action plan in this format: {{"Agent[0.5, 0.5]":"move(box_blue, square[0.5, 1.5])", "Agent[1.5, 0.5]":"move...}}.
+    Include an agent only if it has a task next.
+    Now, plan the next step:
+    '''
+    
     token_num_count = len(enc.encode(user_prompt_1))
 
     if dialogue_history_method in ("_w_only_state_action_history",
@@ -146,6 +166,23 @@ def dialogue_func(
         raise ValueError("state and response list do not match")
     if len(pg_state_list) - len(dialogue_history_list) != 1:
         raise ValueError("state and dialogue history list do not match")
+    
+    user_prompt_1 = f'''
+    You're a box-moving agent in a multi-agent system, stationed on a 1x1 square in a grid playground.
+    You can only interact with objects in your square.
+    Squares are denoted by their center coordinates (e.g., square[0.5, 0.5]), and actions involve moving boxes to targets or nearby squares, represented by colors (e.g., move(box_red, target_red)).
+    Each square can contain many targets and boxes.
+    A central planner coordinates all agents to achieve the goal: match each box with its color-coded target.
+    The current state and possible actions of yourself are: {{{state_update_prompt_local_agent}}}.
+    The current states and possible actions of all other agents are: {{{state_update_prompt_other_agent}}}.
+    The previous state and action pairs at each step are:
+    Please learn from previous steps.
+    Not purely repeat the actions but learn why the state changes or remains in a dead loop. Avoid being stuck in action loops.
+    The central planner's current action plan is: {{{central_response}}}.
+    Please evaluate the given plan. If you agree with it, respond 'I Agree', without any extra words.
+    If not, briefly explain your objections to the central planner.
+    Your response:
+    '''
     token_num_count = len(enc.encode(user_prompt_1))
 
     if dialogue_history_method in (

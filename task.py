@@ -45,10 +45,10 @@ def run_exp(Saving_path,
   with open(Saving_path+f'/env_pg_state_{pg_row_num}_{pg_column_num}/pg_state{iteration_num}/pg_state{iteration_num}.json', 'r') as file:
     pg_dict = json.load(file)
   
-  num_agent = 3
-  user_prompt_list = [] # The record list of all the input prompts
-  response_total_list = [] # The record list of all the responses
-  pg_state_list = [] # The record list of apg states in varied steps
+  num_agent = pg_column_num + pg_row_num
+  user_prompt_list = [] 
+  response_total_list = []
+  pg_state_list = []
   dialogue_history_list = []
   token_num_count_list = []
   pg_state_list.append(pg_dict)
@@ -82,8 +82,7 @@ def run_exp(Saving_path,
             
     #-----------------------------------------SYNTACTIC CHECK-----------------------------------------#
     token_num_count_list.append(token_num_count)
-    response = syntactic_check(response, pg_dict, user_prompt_1, model_name, cen_decen_framework,
-                    user_prompt_list, response_total_list, pg_state_list, index_query_times, Saving_path_result)
+    response = syntactic_check(response, pg_dict, user_prompt_1, model_name, cen_decen_framework)
     if response == 'Out of tokens':
       success_failure = 'failure over token length limit'
       return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
@@ -93,90 +92,89 @@ def run_exp(Saving_path,
     
     agent_response_list.append(response)
 
-    dialogue_history = ''
-    print(f'Original plan response: {response}')
-    prompt_list_dir = {}
-    response_list_dir = {}
-    local_agent_response_list_dir = {}
-    local_agent_response_list_dir['feedback1'] = ''
-    agent_dict = json.loads(response)
+  dialogue_history = ''
+  print(f'Original plan response: {response}')
+  prompt_list_dir = {}
+  response_list_dir = {}
+  local_agent_response_list_dir = {}
+  local_agent_response_list_dir['feedback1'] = ''
+  agent_dict = json.loads(response)
 
-  #TODO: Move out this indentation
-    for local_agent_row_i in range(pg_row_num):
-      for local_agent_column_j in range(pg_column_num):
-        if f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]' in agent_dict:
+  for local_agent_row_i in range(pg_row_num):
+    for local_agent_column_j in range(pg_column_num):
+      '''FOR NUM_AGENT, ALL ITERATIVELY DO'''
 
-          prompt_list_dir[f'Agent[{local_agent_row_i+0.5},
-                          {local_agent_column_j+0.5}]'] = []
-          
-          response_list_dir[f'Agent[{local_agent_row_i+0.5},
-                            {local_agent_column_j+0.5}]'] = []
-          
-          state_update_prompt_local_agent, state_update_prompt_other_agent = state_update_func_local_agent(pg_row_num,
-                                                                                                           pg_column_num,
-                                                                                                           local_agent_row_i,
-                                                                                                           local_agent_column_j,
-                                                                                                           pg_dict)
-          local_reprompt = dialogue_func(state_update_prompt_local_agent,
-                                         state_update_prompt_other_agent,
-                                         response,
-                                         response_total_list,
-                                         pg_state_list,
-                                         dialogue_history_list,
-                                         dialogue_history_method
-                                         )
-          prompt_list_dir[f'Agent[{local_agent_row_i+0.5},
-                          {local_agent_column_j+0.5}]'].append(local_reprompt)
-          messages = message_construct_func(prompt_list_dir[f'Agent[{local_agent_row_i+0.5},
-                                                            {local_agent_column_j+0.5}]'],
-                                                            response_list_dir[f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]'],
-                                                            '_w_all_dialogue_history')
-          response_local_agent, token_num_count = LLaMA_response(messages, model_name)
-          token_num_count_list.append(token_num_count)
-          
-          if response_local_agent != 'I Agree':
-            local_agent_response_list_dir['feedback1'] += f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]: {response_local_agent}\n' # collect the response from all the local agents
-            dialogue_history += f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]: {response_local_agent}\n'
+      if f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]' in agent_dict:
+
+        prompt_list_dir[f'Agent[{local_agent_row_i+0.5},\
+                        {local_agent_column_j+0.5}]'] = []
         
-        #-----------------------------------------RECONSTRUCT MESSAGES-----------------------------------------#
-        if local_agent_response_list_dir['feedback1'] != '':
-          local_agent_response_list_dir['feedback1'] += '''
-          This is the feedback from local agents.
-          If you find some errors in your previous plan, try to modify it.
-          Otherwise, output the same plan as before.
-          The output should have the same json format {Agent[0.5, 0.5]:move(box_blue, square[0.5, 1.5]), Agent[1.5, 0.5]:move...}, as above.
-          Do not explain, just directly output json directory.
-          Your response:
-          '''
+        response_list_dir[f'Agent[{local_agent_row_i+0.5},\
+                          {local_agent_column_j+0.5}]'] = []
+        
+        state_update_prompt_local_agent, state_update_prompt_other_agent = \
+          dialogue_func(pg_row_num,
+                        pg_column_num,
+                        local_agent_row_i,
+                        local_agent_column_j,
+                        pg_dict)
+        local_reprompt = dialogue_func(state_update_prompt_local_agent,
+                                        state_update_prompt_other_agent,
+                                        response,
+                                        response_total_list,
+                                        pg_state_list,
+                                        dialogue_history_list,
+                                        dialogue_history_method
+                                        )
+        prompt_list_dir[f'Agent[{local_agent_row_i+0.5},\
+                        {local_agent_column_j+0.5}]'].append(local_reprompt)
+        messages = message_construct_func(prompt_list_dir[f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]'],
+                                                          response_list_dir[f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]'],
+                                                          '_w_all_dialogue_history')
+        response_local_agent, token_num_count = LLaMA_response(messages, model_name)
+        token_num_count_list.append(token_num_count)
+        
+        if response_local_agent != 'I Agree':
+          local_agent_response_list_dir['feedback1'] += f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]: {response_local_agent}\n' # collect the response from all the local agents
+          dialogue_history += f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]: {response_local_agent}\n'
+      
+      #-----------------------------------------RECONSTRUCT MESSAGES-----------------------------------------#
+      if local_agent_response_list_dir['feedback1'] != '':
+        local_agent_response_list_dir['feedback1'] += '''
+        This is the feedback from local agents.
+        If you find some errors in your previous plan, try to modify it.
+        Otherwise, output the same plan as before.
+        The output should have the same json format {Agent[0.5, 0.5]:move(box_blue, square[0.5, 1.5]), Agent[1.5, 0.5]:move...}, as above.
+        Do not explain, just directly output json directory.
+        Your response:
+        '''
+        messages = message_construct_func([user_prompt_list[-1],
+                                            local_agent_response_list_dir['feedback1']],
+                                            [response],
+                                            '_w_all_dialogue_history')
+        
+        response_central_again, token_num_count = LLaMA_response(messages, model_name)
+        
+        #-----------------------------------------SYNTACTIC CHECK AGAIN-----------------------------------------#
+        token_num_count_list.append(token_num_count)
+        match = re.search(r'{.*}', response_central_again, re.DOTALL)
+        if match:
+          response = match.group()
+          response, token_num_count_list_add = with_action_syntactic_check_func(
+            pg_dict, response_central_again, 
+            [user_prompt_list[-1], local_agent_response_list_dir['feedback1']], 
+            [response], model_name, '_w_all_dialogue_history', cen_decen_framework)
 
-          messages = message_construct_func([user_prompt_list[-1],
-                                             local_agent_response_list_dir['feedback1']],
-                                             [response],
-                                             '_w_all_dialogue_history')
-          
-          response_central_again, token_num_count = LLaMA_response(messages, model_name)
-          
-          #-----------------------------------------SYNTACTIC CHECK AGAIN-----------------------------------------#
-          token_num_count_list.append(token_num_count)
-          match = re.search(r'{.*}', response_central_again, re.DOTALL)
-          if match:
-            response = match.group()
+          token_num_count_list = token_num_count_list + token_num_count_list_add
+          print(f'response: {response}')
+        print(messages[2])
+        print(messages[3])
+        print(f'Modified plan response:\n {response}')
+      else:
+        print(f'Plan:\n {response}')
+        pass
 
-            response, token_num_count_list_add = with_action_syntactic_check_func(
-              pg_dict, response_central_again, 
-              [user_prompt_list[-1], local_agent_response_list_dir['feedback1']], 
-              [response], model_name, '_w_all_dialogue_history', cen_decen_framework)
-  
-            token_num_count_list = token_num_count_list + token_num_count_list_add
-            print(f'response: {response}')
-          print(messages[2])
-          print(messages[3])
-          print(f'Modified plan response:\n {response}')
-        else:
-          print(f'Plan:\n {response}')
-          pass
-
-        dialogue_history_list.append(dialogue_history)
+      dialogue_history_list.append(dialogue_history)
     
     print(agent_response_list)
     return ...
@@ -231,7 +229,17 @@ def run_exp(Saving_path,
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 Code_dir_path = os.path.join(os.getcwd())
 os.makedirs(Code_dir_path, exist_ok=True)
-saving_path = Code_dir_path + 'Envq_BoxNet1'
+saving_path = Code_dir_path + '/multi-agent-env'
+
+pg_row_num = 2
+pg_column_num = 2
+iteration_num = 2
+query_time_limit = 10
+model_name = "qwen2.5:14b-instruct-q3_K_L"
+
+run_exp(saving_path, pg_row_num, pg_column_num, iteration_num, 
+        query_time_limit, dialogue_history_method='_w_only_state_action_history'
+        )
 
 # print(f'-------------------Model name: {model_name}-------------------')
 # for pg_row_num, pg_column_num in [(2,2), (2,4), (4,4), (4,8)]:
@@ -261,13 +269,3 @@ saving_path = Code_dir_path + 'Envq_BoxNet1'
     #   f.write(f'{index_query_times+1}')
     # print(success_failure)
     # print(f'Iteration number: {index_query_times+1}')
-
-pg_row_num = 2
-pg_column_num = 2
-iteration_num = 2
-query_time_limit = 10
-model_name = "qwen2.5:14b-instruct-q3_K_L"
-
-run_exp(saving_path, pg_row_num, pg_column_num, iteration_num, 
-        query_time_limit, dialogue_history_method='_w_only_state_action_history'
-        )
