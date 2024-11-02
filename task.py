@@ -7,7 +7,23 @@ import re
 import sys
 import os
 
-# dialogue_history_method = '_w_all_dialogue_history', '_wo_any_dialogue_history', '_w_only_state_action_history'
+def syntactic_check(response, pg_dict, user_prompt_1, model_name, cen_decen_framework):
+  match = re.search(r'{.*}', response, re.DOTALL)
+  if match:
+    response = match.group()
+    if response[0] == '{' and response[-1] == '}':
+      response, token_num_count_list_add = with_action_syntactic_check_func(pg_dict,
+                                                                            response,
+                                                                            [user_prompt_1],
+                                                                            [],
+                                                                            model_name,
+                                                                            '_w_all_dialogue_history',
+                                                                            cen_decen_framework)
+      token_num_count_list = token_num_count_list + token_num_count_list_add
+      print(f'AGENT ACTION RESPONSE: {response}')
+    else:
+      raise ValueError(f'Response format error: {response}')
+
 def run_exp(Saving_path,
             pg_row_num,
             pg_column_num,
@@ -15,9 +31,10 @@ def run_exp(Saving_path,
             query_time_limit,
             dialogue_history_method = '_w_only_state_action_history',
             cen_decen_framework='HMAS-2'):
+  '''Main inference loop'''
 
 #-----------------------------------------DEFINING-----------------------------------------#
-  # Saving_path_result = Saving_path+f'/env_pg_state_{pg_row_num}_{pg_column_num}/pg_state{iteration_num}/{cen_decen_framework}{dialogue_history_method}_{model_name}'
+  Saving_path_result = Saving_path+f'/env_pg_state_{pg_row_num}_{pg_column_num}/pg_state{iteration_num}/{cen_decen_framework}{dialogue_history_method}_{model_name}'
   # # specify the path to your dir for saving the results
   # os.makedirs(Saving_path_result, exist_ok=True)
   # os.makedirs(Saving_path_result+f'/prompt', exist_ok=True)
@@ -65,95 +82,106 @@ def run_exp(Saving_path,
             
     #-----------------------------------------SYNTACTIC CHECK-----------------------------------------#
     token_num_count_list.append(token_num_count)
-    match = re.search(r'{.*}', response, re.DOTALL)
-    if match:
-      response = match.group()
-      if response[0] == '{' and response[-1] == '}':
-        response, token_num_count_list_add = with_action_syntactic_check_func(pg_dict,
-                                                                              response,
-                                                                              [user_prompt_1],
-                                                                              [],
-                                                                              model_name,
-                                                                              '_w_all_dialogue_history',
-                                                                              cen_decen_framework)
-        token_num_count_list = token_num_count_list + token_num_count_list_add
-        print(f'AGENT ACTION RESPONSE: {response}')
-      else:
-        raise ValueError(f'Response format error: {response}')
-      if response == 'Out of tokens':
-        success_failure = 'failure over token length limit'
-        return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
-      elif response == 'Syntactic Error':
-        success_failure = 'Syntactic Error'
-        return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
+    response = syntactic_check(response, pg_dict, user_prompt_1, model_name, cen_decen_framework,
+                    user_prompt_list, response_total_list, pg_state_list, index_query_times, Saving_path_result)
+    if response == 'Out of tokens':
+      success_failure = 'failure over token length limit'
+      return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
+    elif response == 'Syntactic Error':
+      success_failure = 'Syntactic Error'
+      return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
+    
+    agent_response_list.append(response)
 
-      agent_response_list.append(response)
+    dialogue_history = ''
+    print(f'Original plan response: {response}')
+    prompt_list_dir = {}
+    response_list_dir = {}
+    local_agent_response_list_dir = {}
+    local_agent_response_list_dir['feedback1'] = ''
+    agent_dict = json.loads(response)
 
-      #-----------------------------------------TWO AGENT-----------------------------------------#
-      if cen_decen_framework == 'HMAS-2':
-        pass
-        # print('--------HMAS-2 method starts--------')
+  #TODO: Move out this indentation
+    for local_agent_row_i in range(pg_row_num):
+      for local_agent_column_j in range(pg_column_num):
+        if f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]' in agent_dict:
 
-        # #-----------------------------------------CENTER AGENT RESPONSE-----------------------------------------#
-        # # history of first agent
-        # dialogue_history = ''  #f'Central Planner: {response}\n'
-        # #print(f'Original plan response: {response}')
-        # prompt_list_dir = {}
-        # response_list_dir = {}
-        # local_agent_response_list_dir = {}
-        # local_agent_response_list_dir['feedback1'] = ''
-        # agent_dict = json.loads(response)
-
-        # #-----------------------------------------Local AGENT-----------------------------------------#
-        # for local_agent_row_i in range(pg_row_num):
-        #   for local_agent_column_j in range(pg_column_num):
-        #     if f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]' in agent_dict:
-
-        #       prompt_list_dir[f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]'] = []
-        #       response_list_dir[f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]'] = []
-        #       state_update_prompt_local_agent, state_update_prompt_other_agent = state_update_func_local_agent(pg_row_num, pg_column_num, local_agent_row_i, local_agent_column_j, pg_dict)
-
-        #       local_reprompt = input_prompt_local_agent_HMAS2_dialogue_func(state_update_prompt_local_agent, state_update_prompt_other_agent, response, response_total_list, pg_state_list, dialogue_history_list, dialogue_history_method)
-        #       prompt_list_dir[f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]'].append(local_reprompt)
-        #       messages = message_construct_func(prompt_list_dir[f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]'], response_list_dir[f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]'], '_w_all_dialogue_history')
-        #       response_local_agent, token_num_count = LLaMA_response(messages, model_name)
-        #       token_num_count_list.append(token_num_count)
-        #       #print(f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}] response: {response_local_agent}')
-        #       if response_local_agent != 'I Agree':
-        #         local_agent_response_list_dir['feedback1'] += f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]: {response_local_agent}\n' # collect the response from all the local agents
-        #         dialogue_history += f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]: {response_local_agent}\n'
-        
-        # #-----------------------------------------RECONSTRUCT MESSAGES-----------------------------------------#
-        # if local_agent_response_list_dir['feedback1'] != '':
-        #   local_agent_response_list_dir['feedback1'] += '\nThis is the feedback from local agents. If you find some errors in your previous plan, try to modify it. Otherwise, output the same plan as before. The output should have the same json format {Agent[0.5, 0.5]:move(box_blue, square[0.5, 1.5]), Agent[1.5, 0.5]:move...}, as above. Do not explain, just directly output json directory. Your response:'
-        #   messages = message_construct_func([user_prompt_list[-1], local_agent_response_list_dir['feedback1']], [response], '_w_all_dialogue_history') # message construction
-        #   response_central_again, token_num_count = LLaMA_response(messages, model_name)
+          prompt_list_dir[f'Agent[{local_agent_row_i+0.5},
+                          {local_agent_column_j+0.5}]'] = []
           
-        #   #-----------------------------------------SYNTACTIC CHECK AGAIN-----------------------------------------#
-        #   token_num_count_list.append(token_num_count)
-        #   match = re.search(r'{.*}', response_central_again, re.DOTALL)
-        #   if match:
-        #     response = match.group()
+          response_list_dir[f'Agent[{local_agent_row_i+0.5},
+                            {local_agent_column_j+0.5}]'] = []
+          
+          state_update_prompt_local_agent, state_update_prompt_other_agent = state_update_func_local_agent(pg_row_num,
+                                                                                                           pg_column_num,
+                                                                                                           local_agent_row_i,
+                                                                                                           local_agent_column_j,
+                                                                                                           pg_dict)
+          local_reprompt = dialogue_func(state_update_prompt_local_agent,
+                                         state_update_prompt_other_agent,
+                                         response,
+                                         response_total_list,
+                                         pg_state_list,
+                                         dialogue_history_list,
+                                         dialogue_history_method
+                                         )
+          prompt_list_dir[f'Agent[{local_agent_row_i+0.5},
+                          {local_agent_column_j+0.5}]'].append(local_reprompt)
+          messages = message_construct_func(prompt_list_dir[f'Agent[{local_agent_row_i+0.5},
+                                                            {local_agent_column_j+0.5}]'],
+                                                            response_list_dir[f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]'],
+                                                            '_w_all_dialogue_history')
+          response_local_agent, token_num_count = LLaMA_response(messages, model_name)
+          token_num_count_list.append(token_num_count)
+          
+          if response_local_agent != 'I Agree':
+            local_agent_response_list_dir['feedback1'] += f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]: {response_local_agent}\n' # collect the response from all the local agents
+            dialogue_history += f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]: {response_local_agent}\n'
+        
+        #-----------------------------------------RECONSTRUCT MESSAGES-----------------------------------------#
+        if local_agent_response_list_dir['feedback1'] != '':
+          local_agent_response_list_dir['feedback1'] += '''
+          This is the feedback from local agents.
+          If you find some errors in your previous plan, try to modify it.
+          Otherwise, output the same plan as before.
+          The output should have the same json format {Agent[0.5, 0.5]:move(box_blue, square[0.5, 1.5]), Agent[1.5, 0.5]:move...}, as above.
+          Do not explain, just directly output json directory.
+          Your response:
+          '''
 
-        #     response, token_num_count_list_add = with_action_syntactic_check_func(
-        #       pg_dict, response_central_again, 
-        #       [user_prompt_list[-1], local_agent_response_list_dir['feedback1']], 
-        #       [response], model_name, '_w_all_dialogue_history', cen_decen_framework)
+          messages = message_construct_func([user_prompt_list[-1],
+                                             local_agent_response_list_dir['feedback1']],
+                                             [response],
+                                             '_w_all_dialogue_history')
+          
+          response_central_again, token_num_count = LLaMA_response(messages, model_name)
+          
+          #-----------------------------------------SYNTACTIC CHECK AGAIN-----------------------------------------#
+          token_num_count_list.append(token_num_count)
+          match = re.search(r'{.*}', response_central_again, re.DOTALL)
+          if match:
+            response = match.group()
+
+            response, token_num_count_list_add = with_action_syntactic_check_func(
+              pg_dict, response_central_again, 
+              [user_prompt_list[-1], local_agent_response_list_dir['feedback1']], 
+              [response], model_name, '_w_all_dialogue_history', cen_decen_framework)
   
-        #     token_num_count_list = token_num_count_list + token_num_count_list_add
-        #     print(f'response: {response}')
-        #   print(messages[2])
-        #   print(messages[3])
-        #   print(f'Modified plan response:\n {response}')
-        # else:
-        #   print(f'Plan:\n {response}')
-        #   pass
+            token_num_count_list = token_num_count_list + token_num_count_list_add
+            print(f'response: {response}')
+          print(messages[2])
+          print(messages[3])
+          print(f'Modified plan response:\n {response}')
+        else:
+          print(f'Plan:\n {response}')
+          pass
 
-        # dialogue_history_list.append(dialogue_history)
+        dialogue_history_list.append(dialogue_history)
     
     print(agent_response_list)
     return ...
-    #-----------------------------------------FINAL RESPONSE SYNTACTIC CHECK AGAIN-----------------------------------------#
+  
+  #-----------------------------------------FINAL RESPONSE SYNTACTIC CHECK AGAIN-----------------------------------------#
   #   response_total_list.append(response)
 
   #   if response == 'Out of tokens': 
@@ -240,7 +268,6 @@ iteration_num = 2
 query_time_limit = 10
 model_name = "qwen2.5:14b-instruct-q3_K_L"
 
-run_exp(
-  Saving_path, pg_row_num, pg_column_num, iteration_num, 
-  query_time_limit, dialogue_history_method='_w_only_state_action_history'
-)
+run_exp(saving_path, pg_row_num, pg_column_num, iteration_num, 
+        query_time_limit, dialogue_history_method='_w_only_state_action_history'
+        )
