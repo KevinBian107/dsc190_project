@@ -14,12 +14,16 @@ import sys
 import os
 
 # dialogue_history_method = '_w_all_dialogue_history', '_wo_any_dialogue_history', '_w_only_state_action_history'
-def run_exp(Saving_path, pg_row_num, pg_column_num, iteration_num, query_time_limit, dialogue_history_method = '_w_only_state_action_history', cen_decen_framework='HMAS-2'):
+def run_exp(Saving_path,
+            pg_row_num,
+            pg_column_num,
+            iteration_num,
+            query_time_limit,
+            dialogue_history_method = '_w_only_state_action_history',
+            cen_decen_framework='HMAS-2'):
 
 #-----------------------------------------DEFINING-----------------------------------------#
-
   # Saving_path_result = Saving_path+f'/env_pg_state_{pg_row_num}_{pg_column_num}/pg_state{iteration_num}/{cen_decen_framework}{dialogue_history_method}_{model_name}'
-
   # # specify the path to your dir for saving the results
   # os.makedirs(Saving_path_result, exist_ok=True)
   # os.makedirs(Saving_path_result+f'/prompt', exist_ok=True)
@@ -29,7 +33,8 @@ def run_exp(Saving_path, pg_row_num, pg_column_num, iteration_num, query_time_li
 
   with open(Saving_path+f'/env_pg_state_{pg_row_num}_{pg_column_num}/pg_state{iteration_num}/pg_state{iteration_num}.json', 'r') as file:
     pg_dict = json.load(file)
-
+  
+  num_agent = 3
   user_prompt_list = [] # The record list of all the input prompts
   response_total_list = [] # The record list of all the responses
   pg_state_list = [] # The record list of apg states in varied steps
@@ -50,52 +55,45 @@ def run_exp(Saving_path, pg_row_num, pg_column_num, iteration_num, query_time_li
     # action plans provided by each agent
     agent_response_list = []
 
-    if True:
-      if True:
-
-        ''' ASSUME 4 AGENTS '''
-        for i in range(4):
-          #-----------------------------------------PROMPT-----------------------------------------#
-          user_prompt_1 = input_prompt_1_func_total(state_update_prompt, response_total_list,
-                                                    pg_state_list, dialogue_history_list,
-                                                    dialogue_history_method, cen_decen_framework)
-          user_prompt_list.append(user_prompt_1)
-          
-          # message construction
-          messages = message_construct_func([user_prompt_1], [], '_w_all_dialogue_history')
-
-          print('MESSAGE:', messages)
-
-          # with open(Saving_path_result+'/prompt' + '/user_prompt_'+str(index_query_times+1), 'w') as f:
-          #   f.write(user_prompt_list[-1])
-          
-          #-----------------------------------------RESPONSE-----------------------------------------#
-          response, token_num_count = LLaMA_response(messages, model_name) # 'gpt-4' or 'gpt-3.5-turbo-0301' or 'gpt-4-32k' or 'gpt-3' or 'gpt-4-0613'
-          print('Initial response: ', response)
+  for _ in range(num_agent):
+    '''FOR NUM_AGENT, ITERATIVELY DO'''
+    user_prompt_1 = rplh_prompt_func(state_update_prompt,
+                                     response_total_list,
+                                      pg_state_list,
+                                      dialogue_history_list,
+                                      dialogue_history_method,
+                                      cen_decen_framework)
+    user_prompt_list.append(user_prompt_1)
+    messages = message_construct_func([user_prompt_1], [], '_w_only_state_action_history')
+    # with open(Saving_path_result+'/prompt' + '/user_prompt_'+str(index_query_times+1), 'w') as f:
+    #   f.write(user_prompt_list[-1])
+    response, token_num_count = LLaMA_response(messages, model_name)
             
-          #-----------------------------------------SYNTACTIC CHECK-----------------------------------------#
-          
-          # token_num_count_list.append(token_num_count)
-          # match = re.search(r'{.*}', initial_response, re.DOTALL)
+    #-----------------------------------------SYNTACTIC CHECK-----------------------------------------#
+    token_num_count_list.append(token_num_count)
+    match = re.search(r'{.*}', response, re.DOTALL)
+    if match:
+      response = match.group()
+      if response[0] == '{' and response[-1] == '}':
+        response, token_num_count_list_add = with_action_syntactic_check_func(pg_dict,
+                                                                              response,
+                                                                              [user_prompt_1],
+                                                                              [],
+                                                                              model_name,
+                                                                              '_w_all_dialogue_history',
+                                                                              cen_decen_framework)
+        token_num_count_list = token_num_count_list + token_num_count_list_add
+        print(f'AGENT ACTION RESPONSE: {response}')
+      else:
+        raise ValueError(f'Response format error: {response}')
+      if response == 'Out of tokens':
+        success_failure = 'failure over token length limit'
+        return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
+      elif response == 'Syntactic Error':
+        success_failure = 'Syntactic Error'
+        return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
 
-          # if match:
-          #   response = match.group()
-          #   if response[0] == '{' and response[-1] == '}':
-          #     # syntactic check 
-          #     response, token_num_count_list_add = with_action_syntactic_check_func(pg_dict, response, [user_prompt_1], [], model_name, '_w_all_dialogue_history', cen_decen_framework)
-          #     token_num_count_list = token_num_count_list + token_num_count_list_add
-          #     print(f'AGENT ACTION RESPONSE: {response}')
-          #   else:
-          #     raise ValueError(f'Response format error: {response}')
-          # if response == 'Out of tokens':
-          #   success_failure = 'failure over token length limit'
-          #   return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
-          # elif response == 'Syntactic Error':
-          #   success_failure = 'Syntactic Error'
-          #   return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
-
-          # store each action plan
-          agent_response_list.append(response)
+      agent_response_list.append(response)
 
       #-----------------------------------------TWO AGENT-----------------------------------------#
       if cen_decen_framework == 'HMAS-2':
@@ -209,7 +207,7 @@ def run_exp(Saving_path, pg_row_num, pg_column_num, iteration_num, query_time_li
 
 #-----------------------------------------RUNNING EXPERIMENT-----------------------------------------#
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-Code_dir_path = os.path.join(os.getcwd(), 'runs')
+Code_dir_path = os.path.join(os.getcwd())
 os.makedirs(Code_dir_path, exist_ok=True)
 saving_path = Code_dir_path + 'Envq_BoxNet1'
 
@@ -241,11 +239,12 @@ saving_path = Code_dir_path + 'Envq_BoxNet1'
     #   f.write(f'{index_query_times+1}')
     # print(success_failure)
     # print(f'Iteration number: {index_query_times+1}')
+
 pg_row_num = 2
 pg_column_num = 2
 iteration_num = 2
 query_time_limit = 10
-model_name = "llama3.2:3b-instruct-q5_K_M" 
+model_name = "qwen2.5:14b-instruct-q3_K_L"
 
 run_exp(
   Saving_path, pg_row_num, pg_column_num, iteration_num, 

@@ -5,12 +5,11 @@ import time
 enc = tiktoken.get_encoding("cl100k_base")
 assert enc.decode(enc.encode("hello world")) == "hello world"
 
-
 def LLaMA_response(messages, model_name, url="http://localhost:11434/api/generate"):
     """
     messages: list of message dictionaries following ChatCompletion format
-    model_name: name of the LLaMA model (e.g., 'llama3.2')
-    url: endpoint where LLaMA is hosted (e.g., "http://localhost:11434/api/generate")
+    model_name: name of the LLaMA model
+    url: endpoint where LLaMA is hosted
     """
     prompt = "\n".join(
         [f"{msg['role'].capitalize()}: {msg['content']}" for msg in messages]
@@ -44,7 +43,6 @@ def LLaMA_response(messages, model_name, url="http://localhost:11434/api/generat
         return None, 0
 
 
-# Example usage
 # messages = [
 #     {"role": "system", "content": "You are a helpful assistant."},
 #     {"role": "user", "content": "Hello, how are you? What is your parameter size"}
