@@ -17,25 +17,24 @@ def LLM_summarize_func(state_action_prompt_next_initial, model_name):
     response = LLaMA_response(messages, model_name)
     return response
 
+# def input_prompt_1_func(state_update_prompt):
+#     '''design input prompt'''
 
-def input_prompt_1_func(state_update_prompt):
-    '''design input prompt'''
-
-    user_prompt_1 = f"""
-    You are a central planner directing agents in a grid-like field to move colored boxes.
-    Each agent is assigned to a 1x1 square and can only interact with objects in its area.
-    Agents can move a box to a neighboring square or a same-color target.
-    Each square can contain many targets and boxes.
-    The squares are identified by their center coordinates, e.g., square[0.5, 0.5].
-    Actions are like: move(box_red, target_red) or move(box_red, square[0.5, 0.5]).
-    Your task is to instruct each agent to match all boxes to their color-coded targets.
-    After each move, agents provide updates for the next sequence of actions.
-    Your job is to coordinate the agents optimally.
-    {state_update_prompt}
-    Specify your action plan in this format: {{"Agent[0.5, 0.5]":"move(box_blue, square[0.5, 1.5])", "Agent[1.5, 0.5]":"move...}}.
-    Include an agent only if it has a task next. Now, plan the next step:
-    """
-    return user_prompt_1
+#     user_prompt_1 = f"""
+#     You are a central planner directing agents in a grid-like field to move colored boxes.
+#     Each agent is assigned to a 1x1 square and can only interact with objects in its area.
+#     Agents can move a box to a neighboring square or a same-color target.
+#     Each square can contain many targets and boxes.
+#     The squares are identified by their center coordinates, e.g., square[0.5, 0.5].
+#     Actions are like: move(box_red, target_red) or move(box_red, square[0.5, 0.5]).
+#     Your task is to instruct each agent to match all boxes to their color-coded targets.
+#     After each move, agents provide updates for the next sequence of actions.
+#     Your job is to coordinate the agents optimally.
+#     {state_update_prompt}
+#     Specify your action plan in this format: {{"Agent[0.5, 0.5]":"move(box_blue, square[0.5, 1.5])", "Agent[1.5, 0.5]":"move...}}.
+#     Include an agent only if it has a task next. Now, plan the next step:
+#     """
+#     return user_prompt_1
 
 def judge_propmt_func(state_update_prompt,
                               response_total_list,
