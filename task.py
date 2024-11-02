@@ -7,23 +7,6 @@ import re
 import sys
 import os
 
-def syntactic_check(response, pg_dict, user_prompt_1, model_name, cen_decen_framework):
-  match = re.search(r'{.*}', response, re.DOTALL)
-  if match:
-    response = match.group()
-    if response[0] == '{' and response[-1] == '}':
-      response, token_num_count_list_add = with_action_syntactic_check_func(pg_dict,
-                                                                            response,
-                                                                            [user_prompt_1],
-                                                                            [],
-                                                                            model_name,
-                                                                            '_w_all_dialogue_history',
-                                                                            cen_decen_framework)
-      token_num_count_list = token_num_count_list + token_num_count_list_add
-      print(f'AGENT ACTION RESPONSE: {response}')
-    else:
-      raise ValueError(f'Response format error: {response}')
-
 def run_exp(Saving_path,
             pg_row_num,
             pg_column_num,
@@ -32,8 +15,7 @@ def run_exp(Saving_path,
             dialogue_history_method = '_w_only_state_action_history',
             cen_decen_framework='HMAS-2'):
   '''Main inference loop'''
-
-#-----------------------------------------DEFINING-----------------------------------------#
+  
   Saving_path_result = Saving_path+f'/env_pg_state_{pg_row_num}_{pg_column_num}/pg_state{iteration_num}/{cen_decen_framework}{dialogue_history_method}_{model_name}'
   # # specify the path to your dir for saving the results
   # os.makedirs(Saving_path_result, exist_ok=True)
@@ -82,7 +64,21 @@ def run_exp(Saving_path,
             
     #-----------------------------------------SYNTACTIC CHECK-----------------------------------------#
     token_num_count_list.append(token_num_count)
-    response = syntactic_check(response, pg_dict, user_prompt_1, model_name, cen_decen_framework)
+    match = re.search(r'{.*}', response, re.DOTALL)
+    if match:
+      response = match.group()
+    if response[0] == '{' and response[-1] == '}':
+      response, token_num_count_list_add = with_action_syntactic_check_func(pg_dict,
+                                                                            response,
+                                                                            [user_prompt_1],
+                                                                            [],
+                                                                            model_name,
+                                                                            '_w_all_dialogue_history',
+                                                                            cen_decen_framework)
+      token_num_count_list = token_num_count_list + token_num_count_list_add
+      print(f'AGENT ACTION RESPONSE: {response}')
+    else:
+      raise ValueError(f'Response format error: {response}')
     if response == 'Out of tokens':
       success_failure = 'failure over token length limit'
       return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
@@ -92,6 +88,9 @@ def run_exp(Saving_path,
     
     agent_response_list.append(response)
 
+    '''This for loop ends here for all agents doing centralized planning by themselves'''
+
+  '''Starting to do communication between agents and judging process'''
   dialogue_history = ''
   print(f'Original plan response: {response}')
   prompt_list_dir = {}
