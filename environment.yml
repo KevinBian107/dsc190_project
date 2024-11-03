@@ -29,9 +29,5 @@ dependencies:
       - sentence_transformers==2.2.2
       - stable_baselines3==2.0.0
       - openai
-      - re
-      - random
-      - time
-      - copy
       - tiktoken
 

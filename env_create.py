@@ -111,7 +111,6 @@ def with_action_syntactic_check_func(
     response_total_list_input,
     model_name,
     dialogue_history_method,
-    cen_decen_framework,
 ):
     user_prompt_list = copy.deepcopy(user_prompt_list_input)
     response_total_list = copy.deepcopy(response_total_list_input)

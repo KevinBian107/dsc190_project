@@ -8,6 +8,15 @@ input_prompt_token_limit = 3000
 
 #TODO: Added Common Sense + Sensory Information
 
+def judge_propmt_func(state_update_prompt,
+                              response_total_list,
+                              pg_state_list,
+                              dialogue_history_list,
+                              dialogue_history_method,
+                              ):
+    '''function for the judge to use'''
+    return ...
+
 def LLM_summarize_func(state_action_prompt_next_initial, model_name):
     '''Shorten the prompt given'''
 
@@ -38,22 +47,12 @@ def input_prompt_1_func(state_update_prompt):
     """
     return user_prompt_1
 
-def judge_propmt_func(state_update_prompt,
-                              response_total_list,
-                              pg_state_list,
-                              dialogue_history_list,
-                              dialogue_history_method,
-                              cen_decen_framework):
-    '''function for the judge to use'''
-    return ...
-
-def rplh_prompt_func(state_update_prompt,
-                              response_total_list,
-                              pg_state_list,
-                              dialogue_history_list,
-                              dialogue_history_method,
-                              cen_decen_framework):
+def rplh_prompt_func(state_update_prompt, data, dialogue_history_method):
     '''design input prompt for role-playing leader-hellucinating agent'''
+
+    response_total_list = data['response_total_list']
+    pg_state_list = data['pg_state_list']
+    dialogue_history_list = data['dialogue_history_list']
     
     if len(pg_state_list) - len(response_total_list) != 1:
         raise ValueError("state and response list do not match")
@@ -157,10 +156,12 @@ def dialogue_func(
     state_update_prompt_local_agent,
     state_update_prompt_other_agent,
     central_response,
-    response_total_list,
-    pg_state_list,
-    dialogue_history_list,
+    data,
     dialogue_history_method):
+
+    response_total_list = data['response_total_list']
+    pg_state_list = data['pg_state_list']
+    dialogue_history_list = data['dialogue_history_list']
 
     if len(pg_state_list) - len(response_total_list) != 1:
         raise ValueError("state and response list do not match")
