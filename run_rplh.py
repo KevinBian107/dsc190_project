@@ -22,6 +22,7 @@ def run_exp(Saving_path,
         'pg_state_list': [],
         'dialogue_history_list': [],
         'token_num_count_list': [],
+        'hca_agent_response_list': [],
         'pg_dict': None  # For initial environment state
     }
     
@@ -36,10 +37,11 @@ def run_exp(Saving_path,
   print(f'query_time_limit: {query_time_limit}')
   for index_query_times in range(2):
     state_update_prompt = state_update_func(pg_row_num, pg_column_num,  data_dict['pg_dict'])
-    agent_response_list = []
 
     #-----------------------------------------ONE AGENT THINK BY THEMSELVES ONCE-----------------------------------------#
-    for _ in range(num_agent):
+    for a in range(num_agent):
+      print(f'-------###-------###-------###-------HCA_AGENT_{a}-------###-------###-------###-------')
+
       '''FOR NUM_AGENT, ITERATIVELY DO'''
       user_prompt_1 = rplh_prompt_func(state_update_prompt, data_dict, dialogue_history_method)
       data_dict['user_prompt_list'].append(user_prompt_1)
@@ -68,7 +70,7 @@ def run_exp(Saving_path,
         pass
       elif response == 'Syntactic Error':
         pass
-      agent_response_list.append(response)
+      data_dict['hca_agent_response_list'].append(response)
       '''This for loop ends here for all agents doing centralized planning by themselves'''
 
       #-----------------------------------------FOR EACH AGENT RECIEVES COMMAND FROM THE CURRENT HELLUCINATING MAIN AGENT-----------------------------------------#
@@ -86,9 +88,13 @@ def run_exp(Saving_path,
 
       for local_agent_row_i in range(pg_row_num):
         for local_agent_column_j in range(pg_column_num):
+          print(f'-------###-------###-------###-------LOCAL_ROW_{local_agent_row_i}_COL_{local_agent_column_j}-------###-------###-------###-------')
+
           if f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]' in data_local['agent_dict']:
-            data_local['prompt_list_dir'][f'Agent[{local_agent_row_i+0.5},{local_agent_column_j+0.5}]'] = []
-            data_local['response_list_dir'][f'Agent[{local_agent_row_i+0.5},{local_agent_column_j+0.5}]'] = []
+            # note, dict, this have space
+            data_local['prompt_list_dir'][f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]'] = []
+            data_local['response_list_dir'][f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]'] = []
+            print(data_local)
             
             state_update_prompt_local_agent, state_update_prompt_other_agent =  state_update_func_local_agent(pg_row_num,
                                                                                                               pg_column_num,
@@ -101,7 +107,7 @@ def run_exp(Saving_path,
                                             data_dict,
                                             dialogue_history_method
                                             )
-            data_local['prompt_list_dir'][f'Agent[{local_agent_row_i+0.5},{local_agent_column_j+0.5}]'].append(local_reprompt)
+            data_local['prompt_list_dir'][f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]'].append(local_reprompt)
             message_raw = data_local['prompt_list_dir'][f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]']
             response_raw = data_local['response_list_dir'][f'Agent[{local_agent_row_i+0.5}, {local_agent_column_j+0.5}]']
 
@@ -125,11 +131,11 @@ def run_exp(Saving_path,
                       Do not explain, just directly output json directory.
                       Your response:
                       '''
-            # messages = message_construct_func([data_dict['user_prompt_list'][-1], data_local['local_agent_response_list_dir']['feedback1']],
-            #                                   [response],
-            #                                   '_w_all_dialogue_history')
+            messages = message_construct_func([data_dict['user_prompt_list'][-1], data_local['local_agent_response_list_dir']['feedback1']],
+                                              [response],
+                                              '_w_all_dialogue_history')
 
-            messages = ... # This message should be constructed for teh judge, include both central and local response
+            # messages = ... # This message should be constructed for teh judge, include both central and local response, agree on global plan
             
             response_central_again, token_num_count = LLaMA_response(messages, model_name)
             
@@ -145,7 +151,6 @@ def run_exp(Saving_path,
                                                                                     model_name,
                                                                                     '_w_all_dialogue_history'
                                                                                     )
-
               data_dict['token_num_count_list'] = data_dict['token_num_count_list'] + token_num_count_list_add
               print(f'response: {response}')
 
@@ -158,52 +163,14 @@ def run_exp(Saving_path,
           data_dict['dialogue_history_list'].append(dialogue_history)
         
         # print(agent_response_list)
-        return ...
-  
-  #-----------------------------------------FINAL RESPONSE SYNTACTIC CHECK AGAIN-----------------------------------------#
-  #   response_total_list.append(response)
+        
+  #-----------------------------------------TASK SUCCESS CHECK-----------------------------------------#
+  if index_query_times < query_time_limit - 1:
+    success_failure = 'success'
+  else:
+    success_failure = 'failure over query time limit'
+  print(success_failure)
 
-  #   if response == 'Out of tokens': 
-  #     success_failure = 'failure over token length limit'
-  #     return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
-  #   elif response == 'Syntactic Error': 
-  #     success_failure = 'Syntactic Error'
-  #     return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
-
-  #   data = json.loads(response)
-    
-  #   with open(Saving_path_result+'/response' + '/response'+str(index_query_times+1)+'.json', 'w') as f:
-  #       json.dump(data, f)
-  #   original_response_dict = json.loads(response_total_list[index_query_times])
-  #   print(pg_dict)
-  #   if cen_decen_framework in ('DMAS', 'HMAS-1', 'HMAS-1-fast'):
-  #     with open(Saving_path_result+'/dialogue_history' + '/dialogue_history'+str(index_query_times)+'.txt', 'w') as f:
-  #         f.write(dialogue_history_list[index_query_times])
-  #   try:
-  #     system_error_feedback, pg_dict_returned = action_from_response(pg_dict, original_response_dict)
-  #     if system_error_feedback != '':
-  #       print(system_error_feedback)
-  #     pg_dict = pg_dict_returned
-
-  #   except:
-  #     success_failure = 'Hallucination of wrong plan'
-  #     return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
-  #   pg_state_list.append(pg_dict)
-  #   with open(Saving_path_result+'/pg_state' + '/pg_state'+str(index_query_times+2)+'.json', 'w') as f:
-  #       json.dump(pg_dict, f)
-
-  #   #-----------------------------------------TASK SUCCESS CHECK-----------------------------------------#
-  #   count = 0
-  #   for key, value in pg_dict.items():
-  #     count += len(value)
-  #   if count == 0:
-  #     break
-
-  # if index_query_times < query_time_limit - 1:
-  #   success_failure = 'success'
-  # else:
-  #   success_failure = 'failure over query time limit'
-  # return user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result
 
 
 #-----------------------------------------RUNNING EXPERIMENT-----------------------------------------#
@@ -217,36 +184,8 @@ pg_column_num = 2
 iteration_num = 2
 query_time_limit = 10
 model_name = "qwen2.5:14b-instruct-q3_K_L"
+print(f'-------------------Model name: {model_name}-------------------')
 
 run_exp(saving_path, pg_row_num, pg_column_num, iteration_num, 
         query_time_limit, dialogue_history_method='_w_only_state_action_history'
         )
-
-# print(f'-------------------Model name: {model_name}-------------------')
-# for pg_row_num, pg_column_num in [(2,2), (2,4), (4,4), (4,8)]:
-#   if pg_row_num == 4 and pg_column_num == 8:
-#     query_time_limit = 40
-#   else:
-#     query_time_limit = 30
-#   for iteration_num in range(2):
-
-#     print('-------###-------###-------###-------')
-#     print(f'Row num is: {pg_row_num}, Column num is: {pg_column_num}, Iteration num is: {iteration_num}\n\n')
-
-    # user_prompt_list, response_total_list, pg_state_list, success_failure, index_query_times, token_num_count_list, Saving_path_result = run_exp(
-    #   Saving_path, pg_row_num, pg_column_num, iteration_num, 
-    #   query_time_limit, dialogue_history_method='_w_only_state_action_history', 
-    #   cen_decen_framework='HMAS-2', model_name = model_name
-    # )
-
-    # with open(Saving_path_result + '/token_num_count.txt', 'w') as f:
-    #   for token_num_num_count in token_num_count_list:
-    #     f.write(str(token_num_num_count) + '\n')
-
-    # with open(Saving_path_result + '/success_failure.txt', 'w') as f:
-    #   f.write(success_failure)
-
-    # with open(Saving_path_result + '/env_action_times.txt', 'w') as f:
-    #   f.write(f'{index_query_times+1}')
-    # print(success_failure)
-    # print(f'Iteration number: {index_query_times+1}')

@@ -3,4 +3,3 @@
 *.py[cod]
 wandb/
 output*/
-api.txt

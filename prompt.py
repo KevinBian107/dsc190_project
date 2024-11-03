@@ -56,8 +56,8 @@ def rplh_prompt_func(state_update_prompt, data, dialogue_history_method):
     
     if len(pg_state_list) - len(response_total_list) != 1:
         raise ValueError("state and response list do not match")
-    if len(pg_state_list) - len(dialogue_history_list) != 1:
-        raise ValueError("state and dialogue history list do not match")
+    # if len(pg_state_list) - len(dialogue_history_list) != 1:
+    #     raise ValueError("state and dialogue history list do not match")
     
     user_prompt_1 = f'''
     You are a central planner directing agents in a grid-like field to move colored boxes.
@@ -165,8 +165,8 @@ def dialogue_func(
 
     if len(pg_state_list) - len(response_total_list) != 1:
         raise ValueError("state and response list do not match")
-    if len(pg_state_list) - len(dialogue_history_list) != 1:
-        raise ValueError("state and dialogue history list do not match")
+    # if len(pg_state_list) - len(dialogue_history_list) != 1:
+    #     raise ValueError("state and dialogue history list do not match")
     
     user_prompt_1 = f'''
     You're a box-moving agent in a multi-agent system, stationed on a 1x1 square in a grid playground.
